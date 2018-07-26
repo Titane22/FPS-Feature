@@ -18,10 +18,6 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-	// set our turn rates for input
-	BaseTurnRate = 45.f;
-	BaseLookUpRate = 45.f;
-
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
@@ -45,10 +41,55 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	FollowCamera->SetupAttachment(Mesh, FName(TEXT("head"))); 
 	FollowCamera->bUsePawnControlRotation = true; // Camera does not rotate relative to arm
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+	
 }
 
+void ATP_ThirdPersonCharacter::Tick(float deltaTime)
+{
+	if (State == CharacterState::Combat)
+	{
+		if (bDamaged)
+		{
+			tStartTime +=1.f;
+			if (tStartTime > 11.f) tStartTime = 0.f;
+			UE_LOG(LogTemp, Warning, TEXT("tStartTime : %lf "), tStartTime)
+			NonCombatTime = 0.f;
+			if (Health > 0 && tStartTime>10.f)
+			{
+				Health -= 5.f;
+			}
+			else if(Health<0.f)
+			{
+				Health = 0.f;
+			}
+		}
+		else
+		{
+			NonCombatTime += deltaTime;
+		}
+
+		if (NonCombatTime > RecoveryTime)
+		{
+			Health += RecoveryPerTime;
+		}
+
+		if (Health > 100.f)
+		{
+			Health = 100.f;
+			State = CharacterState::NonCombat;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Non-Combat "))
+		if (bDamaged)
+		{
+			State = CharacterState::Combat;
+		}
+	}
+
+	UE_LOG(LogTemp,Warning,TEXT("Health : %lf "),Health)
+}
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -66,44 +107,15 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("TurnRate", this, &ATP_ThirdPersonCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("LookUpRate", this, &ATP_ThirdPersonCharacter::LookUpAtRate);
 
-	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &ATP_ThirdPersonCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &ATP_ThirdPersonCharacter::TouchStopped);
-
-	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ATP_ThirdPersonCharacter::OnResetVR);
+	
 }
 
 
-void ATP_ThirdPersonCharacter::OnResetVR()
+float ATP_ThirdPersonCharacter::GetHealth() const
 {
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
-}
-
-void ATP_ThirdPersonCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-		Jump();
-}
-
-void ATP_ThirdPersonCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-		StopJumping();
-}
-
-void ATP_ThirdPersonCharacter::TurnAtRate(float Rate)
-{
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
-}
-
-void ATP_ThirdPersonCharacter::LookUpAtRate(float Rate)
-{
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	return Health;
 }
 
 void ATP_ThirdPersonCharacter::MoveForward(float Value)
@@ -134,3 +146,5 @@ void ATP_ThirdPersonCharacter::MoveRight(float Value)
 		AddMovementInput(Direction, Value);
 	}
 }
+
+
