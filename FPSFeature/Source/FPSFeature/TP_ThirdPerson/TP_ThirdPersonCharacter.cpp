@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "../Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -35,13 +36,23 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
+	Mesh = AActor::FindComponentByClass<USkeletalMeshComponent>();
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	auto Mesh = AActor::FindComponentByClass<USkeletalMeshComponent>();
 	FollowCamera->SetupAttachment(Mesh, FName(TEXT("head"))); 
 	FollowCamera->bUsePawnControlRotation = true; // Camera does not rotate relative to arm
 
-	
+}
+
+void ATP_ThirdPersonCharacter::BeginPlay()
+{
+	/*Super::BeginPlay();
+	FVector Location(0.0f, 0.0f, 0.0f);
+	FRotator Rotation(0.0f, 0.0f, 0.0f);
+	FActorSpawnParameters SpawnInfo;
+	AWeapon* Weapon = GetWorld()->SpawnActor<AWeapon>(Location, Rotation, SpawnInfo);
+	if (Mesh)UE_LOG(LogTemp, Warning, TEXT("Exist!! %s"), *Mesh->GetName()) else UE_LOG(LogTemp, Warning, TEXT("Not Exist!! %s"), *Mesh->GetName())
+	Weapon->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("Weapon_Attach")));*/
 }
 
 void ATP_ThirdPersonCharacter::Tick(float deltaTime)
@@ -52,7 +63,7 @@ void ATP_ThirdPersonCharacter::Tick(float deltaTime)
 		{
 			tStartTime +=1.f;
 			if (tStartTime > 11.f) tStartTime = 0.f;
-			UE_LOG(LogTemp, Warning, TEXT("tStartTime : %lf "), tStartTime)
+			//UE_LOG(LogTemp, Warning, TEXT("tStartTime : %lf "), tStartTime)
 			NonCombatTime = 0.f;
 			if (Health > 0 && tStartTime>10.f)
 			{
@@ -81,17 +92,15 @@ void ATP_ThirdPersonCharacter::Tick(float deltaTime)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Non-Combat "))
+		//UE_LOG(LogTemp, Warning, TEXT("Non-Combat "))
 		if (bDamaged)
 		{
 			State = CharacterState::Combat;
 		}
 	}
 
-	UE_LOG(LogTemp,Warning,TEXT("Health : %lf "),Health)
+	//UE_LOG(LogTemp,Warning,TEXT("Health : %lf "),Health)
 }
-//////////////////////////////////////////////////////////////////////////
-// Input
 
 void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {

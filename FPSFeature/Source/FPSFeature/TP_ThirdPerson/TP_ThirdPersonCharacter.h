@@ -26,6 +26,7 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+	class USkeletalMeshComponent* Mesh = nullptr;
 public:
 	ATP_ThirdPersonCharacter();
 
@@ -46,6 +47,7 @@ protected:
 	void MoveRight(float Value);
 
 	virtual void Tick(float delatTime) override;
+	virtual void BeginPlay() override;
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
