@@ -46,13 +46,15 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 void ATP_ThirdPersonCharacter::BeginPlay()
 {
-	/*Super::BeginPlay();
+	Super::BeginPlay();
 	FVector Location(0.0f, 0.0f, 0.0f);
 	FRotator Rotation(0.0f, 0.0f, 0.0f);
 	FActorSpawnParameters SpawnInfo;
 	AWeapon* Weapon = GetWorld()->SpawnActor<AWeapon>(Location, Rotation, SpawnInfo);
-	if (Mesh)UE_LOG(LogTemp, Warning, TEXT("Exist!! %s"), *Mesh->GetName()) else UE_LOG(LogTemp, Warning, TEXT("Not Exist!! %s"), *Mesh->GetName())
-	Weapon->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("Weapon_Attach")));*/
+	if (EquippedWeapon)UE_LOG(LogTemp, Warning, TEXT("Exist!! %s"), *EquippedWeapon->GetName()) else UE_LOG(LogTemp, Warning, TEXT("Not Exist!!"))
+	Weapon->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("Weapon_Attach")));
+
+	InputComponent->BindAction("Fire", IE_Pressed, EquippedWeapon, &AWeapon::Fire);
 }
 
 void ATP_ThirdPersonCharacter::Tick(float deltaTime)
@@ -125,6 +127,11 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 float ATP_ThirdPersonCharacter::GetHealth() const
 {
 	return Health;
+}
+
+void ATP_ThirdPersonCharacter::SetEquippedWeapon(AWeapon * EquippedWeaponToSet)
+{
+	EquippedWeapon = EquippedWeaponToSet;
 }
 
 void ATP_ThirdPersonCharacter::MoveForward(float Value)

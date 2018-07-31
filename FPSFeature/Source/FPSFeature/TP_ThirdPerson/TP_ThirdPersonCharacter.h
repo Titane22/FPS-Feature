@@ -27,6 +27,8 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	class UCameraComponent* FollowCamera;
 
 	class USkeletalMeshComponent* Mesh = nullptr;
+
+	class AWeapon* EquippedWeapon = nullptr;
 public:
 	ATP_ThirdPersonCharacter();
 
@@ -37,7 +39,10 @@ public:
 	bool bDamaged;
 
 	UFUNCTION(BlueprintCallable, Category = Health)
-		float GetHealth() const;
+	float GetHealth() const;
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+		void SetEquippedWeapon(class AWeapon* EquippedWeaponToSet);
 protected:
 
 	/** Called for forwards/backward input */
