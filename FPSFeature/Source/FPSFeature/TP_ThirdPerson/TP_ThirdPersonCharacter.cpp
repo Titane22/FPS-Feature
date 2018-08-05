@@ -111,6 +111,12 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATP_ThirdPersonCharacter::CrouchPressed);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATP_ThirdPersonCharacter::CrouchReleased);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATP_ThirdPersonCharacter::SprintPressed);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATP_ThirdPersonCharacter::SprintReleased);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &ATP_ThirdPersonCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ATP_ThirdPersonCharacter::MoveRight);
 
@@ -121,6 +127,30 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
 	
+}
+
+void ATP_ThirdPersonCharacter::CrouchPressed()
+{
+	bCrouchTrue = true;
+	this->GetCharacterMovement()->MaxWalkSpeed = 300.f;
+}
+
+void ATP_ThirdPersonCharacter::CrouchReleased()
+{
+	bCrouchTrue = false;
+	this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}
+
+void ATP_ThirdPersonCharacter::SprintPressed()
+{
+	bSprintTrue = true;
+	this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+}
+
+void ATP_ThirdPersonCharacter::SprintReleased()
+{
+	bSprintTrue = false;
+	this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 

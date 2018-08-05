@@ -44,9 +44,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintImplementableEvent)
+	// UFUNCTION(BlueprintImplementableEvent)
 	void Fire();
-	
+
 	// TODO : Add Static Mesh to Projectile class and then delete this
 	UFUNCTION(BlueprintCallable, Category = Category)
 	void SetProejctile(class AProjectile* ProjectileToSet);

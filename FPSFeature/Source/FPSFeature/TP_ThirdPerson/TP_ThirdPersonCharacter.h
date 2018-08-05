@@ -42,7 +42,7 @@ public:
 	float GetHealth() const;
 
 	UFUNCTION(BlueprintCallable, Category = Weapon)
-		void SetEquippedWeapon(class AWeapon* EquippedWeaponToSet);
+	void SetEquippedWeapon(class AWeapon* EquippedWeaponToSet);
 protected:
 
 	/** Called for forwards/backward input */
@@ -57,6 +57,14 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+	virtual void CrouchPressed();
+
+	virtual void CrouchReleased();
+
+	virtual void SprintPressed();
+
+	virtual void SprintReleased();
+
 	UPROPERTY(BlueprintReadOnly, Category = SetUp)
 	float Health = 100.f;
 
@@ -72,6 +80,12 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	bool bCrouchTrue;
+
+	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	bool bSprintTrue;
 	
 };
 
