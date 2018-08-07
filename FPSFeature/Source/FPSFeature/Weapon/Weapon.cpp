@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Weapon.h"
+#include "../Character/TPSCharacter.h"
 #include "Projectile.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,7 +19,12 @@ AWeapon::AWeapon()
 	Mesh->SetupAttachment(RootComponent);
 	
 	ProjectileClass = AProjectile::StaticClass();
-
+	WeaponOwner = Cast<ATPSCharacter>(this->GetOwner());
+	if (WeaponOwner)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Weapon Owner : %s"),*WeaponOwner->GetName())
+	}
+	FireRate = 0.3f;
 }
 
 // Called when the game starts or when spawned
@@ -31,6 +37,7 @@ void AWeapon::BeginPlay()
 
 void AWeapon::Fire()
 {
+	// TODO : If the player is running, don't fire
 	if (ProjectileClass)
 	{
 		UWorld* const World = GetWorld();
@@ -54,7 +61,7 @@ void AWeapon::Fire()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No"))
+		UE_LOG(LogTemp, Warning, TEXT("Projectile Class is empty"))
 	}
 }
 

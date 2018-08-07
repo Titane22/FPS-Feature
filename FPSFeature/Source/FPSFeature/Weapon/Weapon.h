@@ -21,6 +21,8 @@ class FPSFEATURE_API AWeapon : public AActor
 	// TODO : Add Static Mesh to Projectile class and then delete this
 	UPROPERTY(EditAnywhere, Category = Projectile)
 	class AProjectile* ProjectileBP = nullptr;
+
+	class ATPSCharacter* WeaponOwner = nullptr;
 public:	
 	// Sets default values for this actor's properties
 	AWeapon();
@@ -39,13 +41,16 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// UFUNCTION(BlueprintImplementableEvent)
 	void Fire();
+
+	float FireRate;
+
+	int32 Ammo;
 
 	// TODO : Add Static Mesh to Projectile class and then delete this
 	UFUNCTION(BlueprintCallable, Category = Category)

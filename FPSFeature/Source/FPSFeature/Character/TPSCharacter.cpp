@@ -1,20 +1,20 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
-#include "TP_ThirdPersonCharacter.h"
+#include "TPSCharacter.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "../Weapon.h"
+#include "../Weapon/Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
-// ATP_ThirdPersonCharacter
+// ATPSCharacter
 
-ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
+ATPSCharacter::ATPSCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -44,7 +44,7 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 }
 
-void ATP_ThirdPersonCharacter::BeginPlay()
+void ATPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	FVector Location(0.0f, 0.0f, 0.0f);
@@ -52,12 +52,11 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 	FActorSpawnParameters SpawnInfo;
 	AWeapon* Weapon = GetWorld()->SpawnActor<AWeapon>(Location, Rotation, SpawnInfo);
 	if (EquippedWeapon)UE_LOG(LogTemp, Warning, TEXT("Exist!! %s"), *EquippedWeapon->GetName()) else UE_LOG(LogTemp, Warning, TEXT("Not Exist!!"))
-	Weapon->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("Weapon_Attach")));
 
-	InputComponent->BindAction("Fire", IE_Pressed, EquippedWeapon, &AWeapon::Fire);
+	InputComponent->BindAction("Primary Fire", IE_Pressed, EquippedWeapon, &AWeapon::Fire);
 }
 
-void ATP_ThirdPersonCharacter::Tick(float deltaTime)
+void ATPSCharacter::Tick(float deltaTime)
 {
 	if (State == CharacterState::Combat)
 	{
@@ -104,69 +103,102 @@ void ATP_ThirdPersonCharacter::Tick(float deltaTime)
 	//UE_LOG(LogTemp,Warning,TEXT("Health : %lf "),Health)
 }
 
-void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+void ATPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATP_ThirdPersonCharacter::CrouchPressed);
-	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATP_ThirdPersonCharacter::CrouchReleased);
+	PlayerInputComponent->BindAction("Primary Fire", IE_Pressed, this, &ATPSCharacter::SetFiring);
+	PlayerInputComponent->BindAction("Primary Fire", IE_Released, this, &ATPSCharacter::SetFiring);
 
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATP_ThirdPersonCharacter::SprintPressed);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATP_ThirdPersonCharacter::SprintReleased);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPSCharacter::CrouchPressed);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPSCharacter::CrouchReleased);
 
-	PlayerInputComponent->BindAxis("MoveForward", this, &ATP_ThirdPersonCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ATP_ThirdPersonCharacter::MoveRight);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATPSCharacter::SprintPressed);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATPSCharacter::SprintReleased);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &ATPSCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ATPSCharacter::MoveRight);
 
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
-	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
 	
 }
 
-void ATP_ThirdPersonCharacter::CrouchPressed()
+void ATPSCharacter::CrouchPressed()
 {
-	bCrouchTrue = true;
-	this->GetCharacterMovement()->MaxWalkSpeed = 300.f;
+	if (!bSprintTrue)
+	{
+		bCrouchTrue = true;
+		this->GetCharacterMovement()->MaxWalkSpeed = 300.f;
+	}
 }
 
-void ATP_ThirdPersonCharacter::CrouchReleased()
+void ATPSCharacter::CrouchReleased()
 {
-	bCrouchTrue = false;
-	this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	if (bCrouchTrue)
+	{
+		bCrouchTrue = false;
+		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
 }
 
-void ATP_ThirdPersonCharacter::SprintPressed()
+void ATPSCharacter::SprintPressed()
 {
-	bSprintTrue = true;
-	this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	float FwdValue = InputComponent->GetAxisValue(FName(TEXT("MoveForward")));
+	if (!bCrouchTrue && (FwdValue>0.f))
+	{
+		
+		bSprintTrue = true;
+		this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	}
 }
 
-void ATP_ThirdPersonCharacter::SprintReleased()
+void ATPSCharacter::SprintReleased()
 {
-	bSprintTrue = false;
-	this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	if (bSprintTrue)
+	{
+		bSprintTrue = false;
+		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
 }
 
+void ATPSCharacter::SetFiring()
+{
+	bIsFiring = !bIsFiring;
 
-float ATP_ThirdPersonCharacter::GetHealth() const
+	
+	FTimerHandle    handle;
+	//GetWorld()->GetTimerManager().SetTimer(handle, &ATPSCharacter::OnFire, EquippedWeapon->FireRate, 1);
+	
+}
+
+void ATPSCharacter::OnFire()
+{
+	if (bIsFiring)
+	{
+		EquippedWeapon->Fire();
+	}
+}
+
+float ATPSCharacter::GetHealth() const
 {
 	return Health;
 }
 
-void ATP_ThirdPersonCharacter::SetEquippedWeapon(AWeapon * EquippedWeaponToSet)
+void ATPSCharacter::SetEquippedWeapon(AWeapon * EquippedWeaponToSet)
 {
 	EquippedWeapon = EquippedWeaponToSet;
 }
 
-void ATP_ThirdPersonCharacter::MoveForward(float Value)
+void ATPSCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if ((Controller != NULL) && (Value != 0.0f) )
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -178,9 +210,9 @@ void ATP_ThirdPersonCharacter::MoveForward(float Value)
 	}
 }
 
-void ATP_ThirdPersonCharacter::MoveRight(float Value)
+void ATPSCharacter::MoveRight(float Value)
 {
-	if ( (Controller != NULL) && (Value != 0.0f) )
+	if ( (Controller != NULL) && (Value != 0.0f) && !bSprintTrue)
 	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -192,5 +224,3 @@ void ATP_ThirdPersonCharacter::MoveRight(float Value)
 		AddMovementInput(Direction, Value);
 	}
 }
-
-

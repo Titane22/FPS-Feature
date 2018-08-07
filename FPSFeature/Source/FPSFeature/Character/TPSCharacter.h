@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "TP_ThirdPersonCharacter.generated.h"
+#include "TPSCharacter.generated.h"
 
 UENUM(BlueprintType)
 enum class CharacterState :uint8
@@ -14,7 +14,7 @@ enum class CharacterState :uint8
 };
 
 UCLASS(config=Game)
-class ATP_ThirdPersonCharacter : public ACharacter
+class ATPSCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -29,8 +29,9 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	class USkeletalMeshComponent* Mesh = nullptr;
 
 	class AWeapon* EquippedWeapon = nullptr;
+
 public:
-	ATP_ThirdPersonCharacter();
+	ATPSCharacter();
 
 	UPROPERTY(EditAnywhere, Category = SetUp)
 	float RecoveryPerTime=10.f;
@@ -74,6 +75,12 @@ protected:
 
 	float tStartTime=0.f;
 
+	bool bIsFiring;
+
+	void SetFiring();
+
+	void OnFire();
+
 	CharacterState State;
 public:
 	/** Returns CameraBoom subobject **/
@@ -86,6 +93,5 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	bool bSprintTrue;
-	
 };
 
