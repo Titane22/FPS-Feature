@@ -2,7 +2,7 @@
 
 #include "FPSFeatureGameMode.h"
 #include "FPSFeatureHUD.h"
-#include "FPSFeatureCharacter.h"
+#include "Character/FPSFeatureCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 AFPSFeatureGameMode::AFPSFeatureGameMode()

@@ -20,11 +20,10 @@ AWeapon::AWeapon()
 	
 	ProjectileClass = AProjectile::StaticClass();
 	WeaponOwner = Cast<ATPSCharacter>(this->GetOwner());
-	if (WeaponOwner)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Weapon Owner : %s"),*WeaponOwner->GetName())
-	}
-	FireRate = 0.3f;
+	
+	// Initialize the gun
+	FireRate = 0.18f;
+	Ammo = 30;
 }
 
 // Called when the game starts or when spawned
@@ -50,7 +49,7 @@ void AWeapon::Fire()
 			auto MuzzleTransform = Mesh->GetSocketTransform(FName(TEXT("Muzzle")));
 			// AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(AProjectile::StaticClass(), MuzzleTransform);
 			World->SpawnActor<AProjectile>(ProjectileClass, MuzzleTransform, ActorSpawnParams);
-
+			Ammo--;
 		}
 
 		// try and play the sound if specified
@@ -63,6 +62,16 @@ void AWeapon::Fire()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Projectile Class is empty"))
 	}
+}
+
+float AWeapon::GetFireRate() const
+{
+	return FireRate;
+}
+
+int32 AWeapon::GetAmmo() const
+{
+	return Ammo;
 }
 
 void AWeapon::SetProejctile(AProjectile * ProjectileToSet)

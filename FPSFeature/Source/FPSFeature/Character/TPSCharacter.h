@@ -26,6 +26,9 @@ class ATPSCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* ADSCamera;
+
 	class USkeletalMeshComponent* Mesh = nullptr;
 
 	class AWeapon* EquippedWeapon = nullptr;
@@ -44,6 +47,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void SetEquippedWeapon(class AWeapon* EquippedWeaponToSet);
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	class AWeapon* GetEquippedWeapon() const;
+
+	virtual void Jump() override;
 protected:
 
 	/** Called for forwards/backward input */
@@ -66,6 +74,10 @@ protected:
 
 	virtual void SprintReleased();
 
+	void ActivateAiming();
+
+	void DeactivateAiming();
+
 	UPROPERTY(BlueprintReadOnly, Category = SetUp)
 	float Health = 100.f;
 
@@ -75,11 +87,13 @@ protected:
 
 	float tStartTime=0.f;
 
+	float FiringTime;
+
 	bool bIsFiring;
 
-	void SetFiring();
+	bool bIsAiming;
 
-	void OnFire();
+	void SetFiring();
 
 	CharacterState State;
 public:
@@ -87,6 +101,9 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	void SetADSCamera(UCameraComponent* CameraToSet);
 
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	bool bCrouchTrue;

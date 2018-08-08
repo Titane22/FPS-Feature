@@ -37,9 +37,10 @@ ATPSCharacter::ATPSCharacter()
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	Mesh = AActor::FindComponentByClass<USkeletalMeshComponent>();
+
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(Mesh, FName(TEXT("head"))); 
+	FollowCamera->SetupAttachment(Mesh, FName(TEXT("head")));
 	FollowCamera->bUsePawnControlRotation = true; // Camera does not rotate relative to arm
 
 }
@@ -53,7 +54,7 @@ void ATPSCharacter::BeginPlay()
 	AWeapon* Weapon = GetWorld()->SpawnActor<AWeapon>(Location, Rotation, SpawnInfo);
 	if (EquippedWeapon)UE_LOG(LogTemp, Warning, TEXT("Exist!! %s"), *EquippedWeapon->GetName()) else UE_LOG(LogTemp, Warning, TEXT("Not Exist!!"))
 
-	InputComponent->BindAction("Primary Fire", IE_Pressed, EquippedWeapon, &AWeapon::Fire);
+	// InputComponent->BindAction("Primary Fire", IE_Pressed, EquippedWeapon, &AWeapon::Fire);
 }
 
 void ATPSCharacter::Tick(float deltaTime)
@@ -62,6 +63,7 @@ void ATPSCharacter::Tick(float deltaTime)
 	{
 		if (bDamaged)
 		{
+			// TODO : Apply the regeneration health system with Delay
 			tStartTime +=1.f;
 			if (tStartTime > 11.f) tStartTime = 0.f;
 			//UE_LOG(LogTemp, Warning, TEXT("tStartTime : %lf "), tStartTime)
@@ -93,25 +95,47 @@ void ATPSCharacter::Tick(float deltaTime)
 	}
 	else
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Non-Combat "))
 		if (bDamaged)
 		{
 			State = CharacterState::Combat;
 		}
 	}
-
 	//UE_LOG(LogTemp,Warning,TEXT("Health : %lf "),Health)
+
+	// Automatic fire mode
+	if (bIsFiring)
+	{
+		if (EquippedWeapon->GetAmmo() < 1) bIsFiring = false;
+		FiringTime += deltaTime;
+
+		if (FiringTime > EquippedWeapon->GetFireRate())
+		{
+			FiringTime = 0.f;
+			EquippedWeapon->Fire();
+		}
+	}
+	else
+	{
+		if (FiringTime != 0.f)
+		{
+			FiringTime = 0.f;
+		}
+	}
 }
 
 void ATPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
+	
 	PlayerInputComponent->BindAction("Primary Fire", IE_Pressed, this, &ATPSCharacter::SetFiring);
 	PlayerInputComponent->BindAction("Primary Fire", IE_Released, this, &ATPSCharacter::SetFiring);
+
+	PlayerInputComponent->BindAction("AimDownSights", IE_Pressed, this, &ATPSCharacter::ActivateAiming);
+	PlayerInputComponent->BindAction("AimDownSights", IE_Released, this, &ATPSCharacter::DeactivateAiming);
+
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPSCharacter::CrouchPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPSCharacter::CrouchReleased);
@@ -151,9 +175,8 @@ void ATPSCharacter::CrouchReleased()
 void ATPSCharacter::SprintPressed()
 {
 	float FwdValue = InputComponent->GetAxisValue(FName(TEXT("MoveForward")));
-	if (!bCrouchTrue && (FwdValue>0.f))
+	if (!bCrouchTrue && (FwdValue>0.f) && !bIsAiming)
 	{
-		
 		bSprintTrue = true;
 		this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
 	}
@@ -168,22 +191,39 @@ void ATPSCharacter::SprintReleased()
 	}
 }
 
-void ATPSCharacter::SetFiring()
+void ATPSCharacter::ActivateAiming()
 {
-	bIsFiring = !bIsFiring;
-
-	
-	FTimerHandle    handle;
-	//GetWorld()->GetTimerManager().SetTimer(handle, &ATPSCharacter::OnFire, EquippedWeapon->FireRate, 1);
-	
+	if (FollowCamera && ADSCamera)
+	{
+		bIsAiming = true;
+		FollowCamera->Deactivate();
+		ADSCamera->Activate();
+		this->GetCharacterMovement()->MaxWalkSpeed = 200.f;
+	}
 }
 
-void ATPSCharacter::OnFire()
+void ATPSCharacter::DeactivateAiming()
 {
-	if (bIsFiring)
+	if (FollowCamera && ADSCamera)
 	{
-		EquippedWeapon->Fire();
+		bIsAiming = false;
+		FollowCamera->Activate();
+		ADSCamera->Deactivate();
+		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	}
+}
+
+void ATPSCharacter::SetFiring()
+{
+	//if (EquippedWeapon && EquippedWeapon->GetAmmo() < 1) bIsFiring = false;
+	
+	bIsFiring = !bIsFiring;
+		
+}
+
+void ATPSCharacter:: SetADSCamera(UCameraComponent * CameraToSet)
+{
+	ADSCamera = CameraToSet;
 }
 
 float ATPSCharacter::GetHealth() const
@@ -194,6 +234,19 @@ float ATPSCharacter::GetHealth() const
 void ATPSCharacter::SetEquippedWeapon(AWeapon * EquippedWeaponToSet)
 {
 	EquippedWeapon = EquippedWeaponToSet;
+}
+
+AWeapon* ATPSCharacter::GetEquippedWeapon() const
+{
+	return EquippedWeapon;
+}
+
+void ATPSCharacter::Jump()
+{
+	if (!bSprintTrue)
+	{
+		Super::Jump();
+	}
 }
 
 void ATPSCharacter::MoveForward(float Value)

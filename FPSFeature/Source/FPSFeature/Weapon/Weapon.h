@@ -41,6 +41,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	float FireRate;
+	
+	int32 Ammo;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -48,9 +51,10 @@ public:
 	// UFUNCTION(BlueprintImplementableEvent)
 	void Fire();
 
-	float FireRate;
+	float GetFireRate() const;
 
-	int32 Ammo;
+	UFUNCTION(BlueprintCallable, Category = Category)
+	int32 GetAmmo() const;
 
 	// TODO : Add Static Mesh to Projectile class and then delete this
 	UFUNCTION(BlueprintCallable, Category = Category)
