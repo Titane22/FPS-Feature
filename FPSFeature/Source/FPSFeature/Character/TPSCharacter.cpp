@@ -43,6 +43,14 @@ ATPSCharacter::ATPSCharacter()
 	FollowCamera->SetupAttachment(Mesh, FName(TEXT("head")));
 	FollowCamera->bUsePawnControlRotation = true; // Camera does not rotate relative to arm
 
+	// Initialize the variables in class
+	Health = 100.f;
+
+	NonCombatTime = 0.f;
+
+	RecoveryTime = 3.f;
+
+	ReloadingAnimTime = 3.3f;
 }
 
 void ATPSCharacter::BeginPlay()
@@ -53,8 +61,6 @@ void ATPSCharacter::BeginPlay()
 	FActorSpawnParameters SpawnInfo;
 	AWeapon* Weapon = GetWorld()->SpawnActor<AWeapon>(Location, Rotation, SpawnInfo);
 	if (EquippedWeapon)UE_LOG(LogTemp, Warning, TEXT("Exist!! %s"), *EquippedWeapon->GetName()) else UE_LOG(LogTemp, Warning, TEXT("Not Exist!!"))
-
-	// InputComponent->BindAction("Primary Fire", IE_Pressed, EquippedWeapon, &AWeapon::Fire);
 }
 
 void ATPSCharacter::Tick(float deltaTime)
@@ -64,11 +70,8 @@ void ATPSCharacter::Tick(float deltaTime)
 		if (bDamaged)
 		{
 			// TODO : Apply the regeneration health system with Delay
-			tStartTime +=1.f;
-			if (tStartTime > 11.f) tStartTime = 0.f;
-			//UE_LOG(LogTemp, Warning, TEXT("tStartTime : %lf "), tStartTime)
 			NonCombatTime = 0.f;
-			if (Health > 0 && tStartTime>10.f)
+			if (Health > 0)
 			{
 				Health -= 5.f;
 			}
@@ -106,6 +109,11 @@ void ATPSCharacter::Tick(float deltaTime)
 	if (bIsFiring)
 	{
 		if (EquippedWeapon->GetAmmo() < 1) bIsFiring = false;
+		if (bFirstShoot)
+		{
+			bFirstShoot = false;
+			EquippedWeapon->Fire();
+		}
 		FiringTime += deltaTime;
 
 		if (FiringTime > EquippedWeapon->GetFireRate())
@@ -129,12 +137,14 @@ void ATPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 	check(PlayerInputComponent);
 	
 	PlayerInputComponent->BindAction("Primary Fire", IE_Pressed, this, &ATPSCharacter::SetFiring);
-	PlayerInputComponent->BindAction("Primary Fire", IE_Released, this, &ATPSCharacter::SetFiring);
+	PlayerInputComponent->BindAction("Primary Fire", IE_Released, this, &ATPSCharacter::InitFiring);
+
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATPSCharacter::Reload);
 
 	PlayerInputComponent->BindAction("AimDownSights", IE_Pressed, this, &ATPSCharacter::ActivateAiming);
 	PlayerInputComponent->BindAction("AimDownSights", IE_Released, this, &ATPSCharacter::DeactivateAiming);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ATPSCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPSCharacter::CrouchPressed);
@@ -175,7 +185,7 @@ void ATPSCharacter::CrouchReleased()
 void ATPSCharacter::SprintPressed()
 {
 	float FwdValue = InputComponent->GetAxisValue(FName(TEXT("MoveForward")));
-	if (!bCrouchTrue && (FwdValue>0.f) && !bIsAiming)
+	if (!bCrouchTrue && (FwdValue>0.f) && !bIsAiming && !bIsFiring && !bIsReloading)
 	{
 		bSprintTrue = true;
 		this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
@@ -215,15 +225,62 @@ void ATPSCharacter::DeactivateAiming()
 
 void ATPSCharacter::SetFiring()
 {
-	//if (EquippedWeapon && EquippedWeapon->GetAmmo() < 1) bIsFiring = false;
-	
-	bIsFiring = !bIsFiring;
+	if (EquippedWeapon && !bIsReloading && !bSprintTrue)
+	{
+		if (EquippedWeapon->GetAmmo() < 1)
+		{
+			bIsFiring = false;
+			return;
+		}
+		bFirstShoot = true;
+		bIsFiring = true;
+	}
+}
+
+void ATPSCharacter::InitFiring()
+{
+	if (bIsFiring)
+	{
+		bIsFiring = false;
+	}
+}
+
+void ATPSCharacter::Reload()
+{
+	if (EquippedWeapon)
+	{
+		if (bSprintTrue)
+		{
+			SprintReleased();
+		}
+		if (bIsFiring) bIsFiring = false;
 		
+		SetReloading();
+		
+		FTimerHandle Timer;
+		GetWorld()->GetTimerManager().SetTimer(Timer, this, &ATPSCharacter::InitReloading, ReloadingAnimTime, false);
+	}
+}
+
+void ATPSCharacter::SetReloading()
+{
+	bIsReloading = true;
+}
+
+void ATPSCharacter::InitReloading()
+{
+	EquippedWeapon->Reload();
+	bIsReloading = false;
 }
 
 void ATPSCharacter:: SetADSCamera(UCameraComponent * CameraToSet)
 {
 	ADSCamera = CameraToSet;
+}
+
+bool ATPSCharacter::GetReloading() const
+{
+	return bIsReloading;
 }
 
 float ATPSCharacter::GetHealth() const
@@ -243,7 +300,7 @@ AWeapon* ATPSCharacter::GetEquippedWeapon() const
 
 void ATPSCharacter::Jump()
 {
-	if (!bSprintTrue)
+	if (!bSprintTrue && !bIsFiring)
 	{
 		Super::Jump();
 	}

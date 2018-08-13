@@ -18,13 +18,14 @@ void USwat_Anim::NativeUpdateAnimation(float DeltaSeconds)
 		// Set bool from Character's bCrouchTrue
 		bCrouch = PawnOwner->bCrouchTrue;
 		bSprint = PawnOwner->bSprintTrue;
+		bReloading = PawnOwner->GetReloading();
 
 		// Set AimDirection for control rotation
 		FRotator CurrentAimRotation = PawnOwner->GetControlRotation();
 		float SelFloat;
 		if (CurrentAimRotation.Pitch > 180.f)
 		{
-			SelFloat = 350.f - CurrentAimRotation.Pitch;
+			SelFloat = 360.f - CurrentAimRotation.Pitch;
 		}
 		else
 		{

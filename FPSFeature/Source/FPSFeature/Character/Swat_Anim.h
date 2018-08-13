@@ -32,4 +32,7 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	FRotator AimDirection;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool bReloading;
 };

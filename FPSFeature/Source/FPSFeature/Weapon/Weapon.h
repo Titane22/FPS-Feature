@@ -37,6 +37,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class UAnimInstance* AnimInstance;
+
+	UPROPERTY(VisibleAnywhere, Category = Components)
+		class UParticleSystemComponent* LaunchBlast = nullptr;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -44,17 +47,25 @@ protected:
 	float FireRate;
 	
 	int32 Ammo;
+
+	int32 MaxAmmo;
+
+	int32 ClipSize;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// UFUNCTION(BlueprintImplementableEvent)
 	void Fire();
+
+	void Reload();
 
 	float GetFireRate() const;
 
 	UFUNCTION(BlueprintCallable, Category = Category)
 	int32 GetAmmo() const;
+
+	UFUNCTION(BlueprintCallable, Category = Category)
+	int32 GetMaxAmmo() const;
 
 	// TODO : Add Static Mesh to Projectile class and then delete this
 	UFUNCTION(BlueprintCallable, Category = Category)

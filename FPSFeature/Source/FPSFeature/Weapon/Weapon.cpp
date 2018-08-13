@@ -5,6 +5,7 @@
 #include "Projectile.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/Particles/ParticleSystemComponent.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -18,20 +19,25 @@ AWeapon::AWeapon()
 	//Mesh->SetMaterial(0,);
 	Mesh->SetupAttachment(RootComponent);
 	
+	LaunchBlast = CreateDefaultSubobject<UParticleSystemComponent>(FName("Impact Blast"));
+	LaunchBlast->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	LaunchBlast->bAutoActivate = true;
+
 	ProjectileClass = AProjectile::StaticClass();
 	WeaponOwner = Cast<ATPSCharacter>(this->GetOwner());
-	
+
 	// Initialize the gun
 	FireRate = 0.18f;
 	Ammo = 30;
+	MaxAmmo = 150;
+	ClipSize = 30;
 }
 
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	
+
 }
 
 void AWeapon::Fire()
@@ -49,6 +55,7 @@ void AWeapon::Fire()
 			auto MuzzleTransform = Mesh->GetSocketTransform(FName(TEXT("Muzzle")));
 			// AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(AProjectile::StaticClass(), MuzzleTransform);
 			World->SpawnActor<AProjectile>(ProjectileClass, MuzzleTransform, ActorSpawnParams);
+			LaunchBlast->Activate();
 			Ammo--;
 		}
 
@@ -64,6 +71,24 @@ void AWeapon::Fire()
 	}
 }
 
+void AWeapon::Reload()
+{
+	if (Ammo != ClipSize)
+	{
+		int32 RemainAmmo = ClipSize - Ammo;
+		if (MaxAmmo > ClipSize-Ammo)
+		{
+			Ammo += RemainAmmo;
+			MaxAmmo -= RemainAmmo;
+		}
+		else
+		{
+			Ammo += MaxAmmo;
+			MaxAmmo = 0;
+		}
+	}
+}
+
 float AWeapon::GetFireRate() const
 {
 	return FireRate;
@@ -72,6 +97,11 @@ float AWeapon::GetFireRate() const
 int32 AWeapon::GetAmmo() const
 {
 	return Ammo;
+}
+
+int32 AWeapon::GetMaxAmmo() const
+{
+	return MaxAmmo;
 }
 
 void AWeapon::SetProejctile(AProjectile * ProjectileToSet)

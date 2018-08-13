@@ -79,21 +79,34 @@ protected:
 	void DeactivateAiming();
 
 	UPROPERTY(BlueprintReadOnly, Category = SetUp)
-	float Health = 100.f;
+	float Health ;
 
-	float NonCombatTime = 0.f;
+	float NonCombatTime;
 
-	float RecoveryTime = 3.f;
+	float RecoveryTime ;
 
-	float tStartTime=0.f;
+	float ReloadingAnimTime;
 
 	float FiringTime;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SetUp)
 	bool bIsFiring;
 
 	bool bIsAiming;
 
+	bool bIsReloading;
+
+	bool bFirstShoot;
+
 	void SetFiring();
+
+	void InitFiring();
+
+	void Reload();
+	
+	void SetReloading();
+
+	void InitReloading();
 
 	CharacterState State;
 public:
@@ -110,5 +123,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	bool bSprintTrue;
+
+	bool GetReloading() const;
 };
 
