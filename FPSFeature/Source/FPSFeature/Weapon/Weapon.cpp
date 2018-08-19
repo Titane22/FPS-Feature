@@ -73,7 +73,7 @@ void AWeapon::Fire()
 
 void AWeapon::Reload()
 {
-	if (Ammo != ClipSize)
+	if (isSameClipSize())
 	{
 		int32 RemainAmmo = ClipSize - Ammo;
 		if (MaxAmmo > ClipSize-Ammo)
@@ -102,6 +102,12 @@ int32 AWeapon::GetAmmo() const
 int32 AWeapon::GetMaxAmmo() const
 {
 	return MaxAmmo;
+}
+
+bool AWeapon::isSameClipSize()
+{
+	if (Ammo != ClipSize) return true;
+	return false;
 }
 
 void AWeapon::SetProejctile(AProjectile * ProjectileToSet)

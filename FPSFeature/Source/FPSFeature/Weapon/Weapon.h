@@ -67,6 +67,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Category)
 	int32 GetMaxAmmo() const;
 
+	bool isSameClipSize();
+
 	// TODO : Add Static Mesh to Projectile class and then delete this
 	UFUNCTION(BlueprintCallable, Category = Category)
 	void SetProejctile(class AProjectile* ProjectileToSet);

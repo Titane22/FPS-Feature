@@ -45,12 +45,10 @@ ATPSCharacter::ATPSCharacter()
 
 	// Initialize the variables in class
 	Health = 100.f;
-
 	NonCombatTime = 0.f;
-
 	RecoveryTime = 3.f;
-
 	ReloadingAnimTime = 3.3f;
+	MaxJumpCnt = 2;
 }
 
 void ATPSCharacter::BeginPlay()
@@ -129,6 +127,23 @@ void ATPSCharacter::Tick(float deltaTime)
 			FiringTime = 0.f;
 		}
 	}
+
+	// Reset Jumpcount for double jump
+	if (!this->GetCharacterMovement()->IsFalling() && JumpCount>0)
+	{
+		JumpCount = 0;
+	}
+
+	if (bIsSprint)
+	{
+		float FwdValue = InputComponent->GetAxisValue(FName(TEXT("MoveForward")));
+		if (FwdValue == 0)
+		{
+			bIsSprint = false;
+			this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+		}
+	}
+
 }
 
 void ATPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -148,10 +163,13 @@ void ATPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPSCharacter::CrouchPressed);
-	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPSCharacter::CrouchReleased);
+	//PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPSCharacter::CrouchReleased);
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATPSCharacter::SprintPressed);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATPSCharacter::SprintReleased);
+	//PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATPSCharacter::SprintReleased);
+
+	PlayerInputComponent->BindAction("Walk", IE_Pressed, this, &ATPSCharacter::WalkPressed);
+	PlayerInputComponent->BindAction("Walk", IE_Released, this, &ATPSCharacter::WalkReleased);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ATPSCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ATPSCharacter::MoveRight);
@@ -166,37 +184,84 @@ void ATPSCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 
 void ATPSCharacter::CrouchPressed()
 {
-	if (!bSprintTrue)
+	bIsCrouch = !bIsCrouch;
+	if (!bIsCrouch)
 	{
-		bCrouchTrue = true;
-		this->GetCharacterMovement()->MaxWalkSpeed = 300.f;
+		bIsCrouch = false;
+		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
+	else if (bIsCrouch)
+	{
+		if (!bIsSprint && !bIsWalk)
+		{
+			bIsCrouch = true;
+			this->GetCharacterMovement()->MaxWalkSpeed = 300.f;
+		}
+		else if (bIsSprint && !bIsWalk && !bIsFiring && !bIsAiming && !bIsReloading)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Called"))
+			bIsSprint = false;
+			bIsSliding = true;
+		}
 	}
 }
 
 void ATPSCharacter::CrouchReleased()
 {
-	if (bCrouchTrue)
+	if (bIsCrouch)
 	{
-		bCrouchTrue = false;
+		bIsCrouch = false;
 		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
+	else if (bIsSliding)
+	{
+		bIsSliding = false;
 	}
 }
 
 void ATPSCharacter::SprintPressed()
 {
-	float FwdValue = InputComponent->GetAxisValue(FName(TEXT("MoveForward")));
-	if (!bCrouchTrue && (FwdValue>0.f) && !bIsAiming && !bIsFiring && !bIsReloading)
+	bIsSprint = !bIsSprint;
+	if (!bIsSprint)
 	{
-		bSprintTrue = true;
-		this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+		bIsSprint = false;
+		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
+	else
+	{
+		float FwdValue = InputComponent->GetAxisValue(FName(TEXT("MoveForward")));
+		float RValue = InputComponent->GetAxisValue(FName(TEXT("MoveRight")));
+		if (!bIsCrouch && FwdValue > 0.f && !bIsAiming && !bIsFiring && !bIsReloading && !bIsWalk)
+		{
+			bIsSprint = true;
+			this->GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+		}
 	}
 }
 
 void ATPSCharacter::SprintReleased()
 {
-	if (bSprintTrue)
+	if (bIsSprint)
 	{
-		bSprintTrue = false;
+		bIsSprint = false;
+		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
+}
+
+void ATPSCharacter::WalkPressed()
+{
+	if (!bIsWalk && !bIsSprint && !bIsCrouch)
+	{
+		bIsWalk = true;
+		this->GetCharacterMovement()->MaxWalkSpeed = 300.f;
+	}
+}
+
+void ATPSCharacter::WalkReleased()
+{
+	if (bIsWalk)
+	{
+		bIsWalk = false;
 		this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	}
 }
@@ -225,7 +290,7 @@ void ATPSCharacter::DeactivateAiming()
 
 void ATPSCharacter::SetFiring()
 {
-	if (EquippedWeapon && !bIsReloading && !bSprintTrue)
+	if (EquippedWeapon && !bIsReloading && !bIsSprint)
 	{
 		if (EquippedWeapon->GetAmmo() < 1)
 		{
@@ -247,12 +312,8 @@ void ATPSCharacter::InitFiring()
 
 void ATPSCharacter::Reload()
 {
-	if (EquippedWeapon)
+	if (EquippedWeapon&& EquippedWeapon->isSameClipSize())
 	{
-		if (bSprintTrue)
-		{
-			SprintReleased();
-		}
 		if (bIsFiring) bIsFiring = false;
 		
 		SetReloading();
@@ -300,9 +361,18 @@ AWeapon* ATPSCharacter::GetEquippedWeapon() const
 
 void ATPSCharacter::Jump()
 {
-	if (!bSprintTrue && !bIsFiring)
+	if (!bIsFiring)
 	{
-		Super::Jump();
+		if (JumpCount < MaxJumpCnt)
+		{
+			if (bIsSprint)
+			{
+				bIsSprint = false;
+				this->GetCharacterMovement()->MaxWalkSpeed = 600.f;
+			}
+			JumpCount++;
+			Super::Jump();
+		}
 	}
 }
 
@@ -322,7 +392,7 @@ void ATPSCharacter::MoveForward(float Value)
 
 void ATPSCharacter::MoveRight(float Value)
 {
-	if ( (Controller != NULL) && (Value != 0.0f) && !bSprintTrue)
+	if ( (Controller != NULL) && (Value != 0.0f) )
 	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();

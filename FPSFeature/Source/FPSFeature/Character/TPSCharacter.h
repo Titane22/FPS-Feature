@@ -66,16 +66,18 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
-	virtual void CrouchPressed();
 
+	// Binding Action functions
+	virtual void CrouchPressed();
 	virtual void CrouchReleased();
 
 	virtual void SprintPressed();
-
 	virtual void SprintReleased();
 
-	void ActivateAiming();
+	virtual void WalkPressed();
+	virtual void WalkReleased();
 
+	void ActivateAiming();
 	void DeactivateAiming();
 
 	UPROPERTY(BlueprintReadOnly, Category = SetUp)
@@ -85,30 +87,51 @@ protected:
 
 	float RecoveryTime ;
 
+	// Based on reloading animation time
 	float ReloadingAnimTime;
 
+	// When character is on automatic firing mode, control the fire rate
 	float FiringTime;
 
+	// if it is true, character is firing
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SetUp)
 	bool bIsFiring;
 
+	// if it is true, character is aiming down sight
 	bool bIsAiming;
 
+	// if it is true, character is reloading
 	bool bIsReloading;
 
+	// if it is true, character is fire without delay
 	bool bFirstShoot;
 
+	bool bIsJump;
+
+	bool bIsWalk;
+
+	// Set true firing state
 	void SetFiring();
 
+	// Initialize the firing state
 	void InitFiring();
 
 	void Reload();
 	
+	// Set true reloading state
 	void SetReloading();
 
+	// Initialize the reloading state
 	void InitReloading();
 
+	// Has the character state
 	CharacterState State;
+
+	// Count the val, when it jumped
+	int32 JumpCount;
+
+	// Initialze the count to 2 for double jump
+	int32 MaxJumpCnt;
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -118,11 +141,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void SetADSCamera(UCameraComponent* CameraToSet);
 
+
+	// It is need on blueprint
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	bool bCrouchTrue;
+	bool bIsCrouch;
 
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	bool bSprintTrue;
+	bool bIsSprint;
+
+	// if bIsCrouch and bIsSprint is true, bIsSliding is true
+	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	bool bIsSliding;
 
 	bool GetReloading() const;
 };

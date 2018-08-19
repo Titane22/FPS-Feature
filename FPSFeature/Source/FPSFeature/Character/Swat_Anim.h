@@ -35,4 +35,7 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool bReloading;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool bRunningSlide;
 };

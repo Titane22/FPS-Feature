@@ -16,9 +16,10 @@ void USwat_Anim::NativeUpdateAnimation(float DeltaSeconds)
 		Speed = PawnOwner->GetVelocity().Size();
 
 		// Set bool from Character's bCrouchTrue
-		bCrouch = PawnOwner->bCrouchTrue;
-		bSprint = PawnOwner->bSprintTrue;
+		bCrouch = PawnOwner->bIsCrouch;
+		bSprint = PawnOwner->bIsSprint;
 		bReloading = PawnOwner->GetReloading();
+		bRunningSlide = PawnOwner->bIsSliding;
 
 		// Set AimDirection for control rotation
 		FRotator CurrentAimRotation = PawnOwner->GetControlRotation();
