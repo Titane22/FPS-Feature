@@ -69,10 +69,8 @@ protected:
 
 	// Binding Action functions
 	virtual void CrouchPressed();
-	virtual void CrouchReleased();
 
 	virtual void SprintPressed();
-	virtual void SprintReleased();
 
 	virtual void WalkPressed();
 	virtual void WalkReleased();
@@ -89,6 +87,9 @@ protected:
 
 	// Based on reloading animation time
 	float ReloadingAnimTime;
+
+	// Based on running slide anim time
+	float SlidingAnimTime;
 
 	// When character is on automatic firing mode, control the fire rate
 	float FiringTime;
@@ -124,6 +125,9 @@ protected:
 	// Initialize the reloading state
 	void InitReloading();
 
+	// Initialize the sliding state
+	void InitSliding();
+
 	// Has the character state
 	CharacterState State;
 
@@ -131,7 +135,7 @@ protected:
 	int32 JumpCount;
 
 	// Initialze the count to 2 for double jump
-	int32 MaxJumpCnt;
+	int32 MaxJumpCnt=2;
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
